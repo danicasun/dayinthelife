@@ -1,0 +1,4 @@
+# CS109 challenge rules disallow advanced libraries (e.g., pandas, numpy).
+# build_simulation.py uses Python standard library only:
+#   csv, json, random, collections, datetime, pathlib, sys, typing
+# This file is intentionally empty (no third-party dependencies).

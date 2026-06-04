@@ -80,9 +80,8 @@ npm run preview
 
 ## Data attribution
 
-Survey data collected by [name] from Stanford students, May–June 2026.
+Survey data collected by Danica from Stanford students, May–June 2026.
 Inspired by [Nathan Yau's "A Day in the Life of Americans"](https://flowingdata.com/2015/12/15/a-day-in-the-life-of-americans/) (FlowingData, 2015).
 
 ## License
 
-[Placeholder]

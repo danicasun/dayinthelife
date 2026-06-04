@@ -37,8 +37,16 @@ import Description from './components/Description';
 import EntropyChart from './components/EntropyChart';
 import ActivityProbabilityChart from './components/ActivityProbabilityChart';
 
-/** Public path of the precomputed simulation (served by Vite from `web/public/`). */
-const SIMULATION_JSON_URL = '/simulation.json';
+/**
+ * Public path of the precomputed simulation (served by Vite from `web/public/`).
+ *
+ * Prefixed with `import.meta.env.BASE_URL` so the URL respects whatever
+ * `base` is configured in `vite.config.ts`. In dev that's `/`, so the URL
+ * resolves to `/simulation.json`; in production (deployed under
+ * `/dayatstanford/`) it resolves to `/dayatstanford/simulation.json`.
+ * Hardcoding `/simulation.json` would 404 in production.
+ */
+const SIMULATION_JSON_URL = `${import.meta.env.BASE_URL}simulation.json`;
 
 /**
  * Number of unique survey respondents whose activity logs were used to fit the

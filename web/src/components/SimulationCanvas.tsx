@@ -356,6 +356,7 @@ export default function SimulationCanvas({
         (Math.random() - 0.5) * 2 * STAGGER_RANGE_BLOCKS;
       const personalBlock = dotPersonalBlock(initialMinute, staggerOffsetBlocks);
       const activityIndex = data.students[studentIndex][personalBlock];
+      if (activityIndex < 0 || activityIndex >= ACTIVITIES.length) continue;
       const activity = ACTIVITIES[activityIndex];
       const initialJitterX = (Math.random() - 0.5) * 60;
       const initialJitterY = (Math.random() - 0.5) * 60;
@@ -435,6 +436,8 @@ export default function SimulationCanvas({
 
         const currIdx = data.students[studentIndex][currentBlock];
         const prevIdx = data.students[studentIndex][prevBlock];
+        if (currIdx < 0 || currIdx >= ACTIVITIES.length) continue;
+        if (prevIdx < 0 || prevIdx >= ACTIVITIES.length) continue;
         const currA = ACTIVITIES[currIdx];
         const prevA = ACTIVITIES[prevIdx];
 

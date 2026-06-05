@@ -45,7 +45,8 @@ export interface SimulationStats {
   /**
    * `transitionProbs[t][from][to]` = empirical P(a_{t+1} = to | a_t = from)
    * at block t, estimated from the simulated trajectories.
-   * Shape: [numBlocks - 1][numActivities][numActivities].
+   * Shape: [numBlocks][numActivities][numActivities].
+   * Block numBlocks-1 counts the cyclic wrap-around transition back to block 0.
    * Each row `transitionProbs[t][from]` sums to 1 (or is all-zeros if no
    * student was in activity `from` at block `t`).
    */
@@ -95,21 +96,22 @@ export function computeSimulationStats(data: SimulationData): SimulationStats {
 
   // ---- 1. Transition counts -----------------------------------------------
   // counts[t][from][to] — use a flat structure for cache friendliness.
-  // We'll convert to a 3-D array of arrays afterwards.
-  const countFlat = new Float64Array((T - 1) * NUM_ACTIVITIES * NUM_ACTIVITIES);
+  // Includes the cyclic block (T-1) → block 0 transition so the array has
+  // exactly T entries and transitionProbs[t] is valid for all t in [0, T).
+  const countFlat = new Float64Array(T * NUM_ACTIVITIES * NUM_ACTIVITIES);
 
   for (let s = 0; s < numStudents; s++) {
     const traj = students[s];
-    for (let t = 0; t < T - 1; t++) {
+    for (let t = 0; t < T; t++) {
       const from = traj[t];
-      const to = traj[t + 1];
+      const to = traj[(t + 1) % T]; // cyclic: last block wraps to first
       countFlat[t * NUM_ACTIVITIES * NUM_ACTIVITIES + from * NUM_ACTIVITIES + to] += 1;
     }
   }
 
   // Normalize rows → probabilities
   const transitionProbs: number[][][] = [];
-  for (let t = 0; t < T - 1; t++) {
+  for (let t = 0; t < T; t++) {
     const slice: number[][] = [];
     for (let from = 0; from < NUM_ACTIVITIES; from++) {
       const row = new Array<number>(NUM_ACTIVITIES).fill(0);

@@ -110,6 +110,8 @@ def parse_hhmm_to_minute_of_day(hhmm: str) -> int:
     hours_str, minutes_str = hhmm.strip().split(":")
     hours = int(hours_str)
     minutes = int(minutes_str)
+    if not (0 <= hours <= 23 and 0 <= minutes <= 59):
+        raise ValueError(f"Time out of range: {hhmm!r}")
     return hours * 60 + minutes
 
 

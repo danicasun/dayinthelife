@@ -268,6 +268,48 @@ a:focus-visible {
      0    0   2px #ffffff;
 }
 
+/* --- Methodology section (between bubble vis and analytics charts) ------- */
+.methodology-section {
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 40px 40px;
+  border-top: 1px solid var(--rule);
+}
+
+.methodology-section__heading {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.15;
+  color: var(--ink-strong);
+  margin: 0 0 16px;
+  letter-spacing: -0.01em;
+}
+
+.methodology-section__body {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+.methodology-section__body p {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-body);
+  margin: 0;
+}
+
+.methodology-section__body strong {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+}
+
 /* --- Analytics sections (entropy + probability charts below simulation) --- */
 .page-layout {
   display: flex;
@@ -548,6 +590,10 @@ a:focus-visible {
     padding-bottom: 64px;
   }
 
+  .methodology-section {
+    padding: 28px 24px 32px;
+  }
+
   .clock-header {
     font-size: 56px;
   }
@@ -571,6 +617,15 @@ a:focus-visible {
 
   .analytics-section__copy {
     max-width: 100%;
+  }
+
+  .methodology-section {
+    padding: 24px 16px 28px;
+  }
+
+  .methodology-section__body {
+    grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .left-panel {

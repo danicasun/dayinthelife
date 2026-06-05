@@ -193,6 +193,41 @@ export default function App(): JSX.Element {
         </main>
       </div>
 
+      <section className="methodology-section" aria-label="Methodology">
+        <h2 className="methodology-section__heading">How this works</h2>
+        <div className="methodology-section__body">
+          <p>
+            <strong>Survey.</strong> {data.numSurveyRespondents} Stanford students logged their
+            activities throughout a full day in May&ndash;June 2026, recording each interval from
+            6&nbsp;AM to 6&nbsp;AM the next morning across 14 activity categories. Respondents
+            with at least 50% of their day recorded ({data.numChainRespondents} students) were
+            used to fit the Markov model; all respondents with at least one entry were used for
+            the activity-probability charts. Gaps within a day were forward-filled from the last
+            known activity, and the blank period around 5&ndash;6&nbsp;AM was assumed to be a
+            continuation of whatever preceded it (typically sleep).
+          </p>
+          <p>
+            <strong>Markov chain.</strong> From the survey, 288 time-varying 14&times;14
+            transition matrices were estimated &mdash; one per 5-minute block of the day.
+            Each entry <em>T</em>[<em>t</em>][<em>i</em>][<em>j</em>] is the
+            probability of moving from activity&nbsp;<em>i</em> to activity&nbsp;<em>j</em> at
+            time&nbsp;<em>t</em>. An empirical-Bayes Dirichlet prior (&alpha;&nbsp;=&nbsp;0.1,
+            anchored to global activity frequencies) smooths transitions that are rare or
+            unobserved, so the model doesn&rsquo;t artificially rule out plausible shifts while
+            avoiding the uniform bleed that plain Laplace smoothing would introduce during, say,
+            deep-night sleep.
+          </p>
+          <p>
+            <strong>Simulation.</strong> 1,000 synthetic student trajectories are sampled from
+            the chain, starting at 6&nbsp;AM. Minimum-stay constraints keep the simulation
+            realistic: students must stay in class for at least 20 minutes, exercise for at
+            least 30, and athletics for at least 60. Each dot in the visualization above
+            represents one simulated student; dots are pulled toward their current activity
+            cluster by a custom D3 force and pushed apart so they don&rsquo;t stack.
+          </p>
+        </div>
+      </section>
+
       <section
         className="analytics-section"
         aria-labelledby="entropy-section-heading"

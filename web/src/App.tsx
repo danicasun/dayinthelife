@@ -29,6 +29,7 @@ import type { SimulationData, Speed } from './lib/types';
 import { SPEED_RATES } from './lib/types';
 import { ACTIVITIES, CANVAS_WIDTH, CANVAS_HEIGHT } from './lib/categories';
 import { useAnimationFrame } from './lib/useAnimationFrame';
+import { computeSimulationStats } from './lib/simulationStats';
 import SimulationCanvas from './components/SimulationCanvas';
 import ClockHeader from './components/ClockHeader';
 import SpeedControls from './components/SpeedControls';
@@ -36,6 +37,9 @@ import ActivityLegend from './components/ActivityLegend';
 import Description from './components/Description';
 import EntropyChart from './components/EntropyChart';
 import ActivityProbabilityChart from './components/ActivityProbabilityChart';
+import TransitionChart from './components/TransitionChart';
+import DurationStatsChart from './components/DurationStatsChart';
+import ForwardProbabilityChart from './components/ForwardProbabilityChart';
 
 /**
  * Public path of the precomputed simulation (served by Vite from `web/public/`).
@@ -48,12 +52,6 @@ import ActivityProbabilityChart from './components/ActivityProbabilityChart';
  */
 const SIMULATION_JSON_URL = `${import.meta.env.BASE_URL}simulation.json`;
 
-/**
- * Number of unique survey respondents whose activity logs were used to fit the
- * time-varying Markov chain. SPEC.md: "45 unique respondents". This is NOT the
- * same as `data.numStudents` (= 1000), which is the synthetic simulated count.
- */
-const SURVEY_RESPONDENT_COUNT = 45;
 
 /** Minutes in a 24-hour day; `currentMinute` wraps modulo this value. */
 const MINUTES_PER_DAY = 1440;
@@ -138,6 +136,13 @@ export default function App(): JSX.Element {
     [displayBlockIndex, numBlocks],
   );
 
+  // Precompute simulation statistics (transition probs + run-length box plots).
+  // O(numStudents × numBlocks) work, done once after data loads.
+  const stats = useMemo(
+    () => (data ? computeSimulationStats(data) : null),
+    [data],
+  );
+
   // Tally students per activity at the displayed block (= what the canvas is
   // currently painting). O(numStudents); memoized on [data, displayBlock] so
   // it only re-runs once per *half-block* boundary, never per frame.
@@ -171,7 +176,7 @@ export default function App(): JSX.Element {
           <footer className="attribution">
             <p>
               Simulation of {data.numStudents.toLocaleString()} Stanford students,
-              based on a survey of {SURVEY_RESPONDENT_COUNT} students collected
+              based on a survey of {data.numSurveyRespondents} students collected
               May&ndash;June 2026 at Stanford.
             </p>
           </footer>
@@ -251,6 +256,48 @@ export default function App(): JSX.Element {
         </header>
         <ActivityProbabilityChart data={data} />
       </section>
+
+      {stats && (
+        <section className="analytics-section" aria-labelledby="transition-section-heading">
+          <header className="analytics-section__header">
+            <h2 id="transition-section-heading" className="analytics-section__heading">
+              What do students do next?
+            </h2>
+            <p className="analytics-section__copy">
+              For each 5-minute block, the probability of transitioning <em>out of</em> the selected activity into each other activity. High values mean students frequently leave at that time; the colored lines show where they go.
+            </p>
+          </header>
+          <TransitionChart data={data} stats={stats} />
+        </section>
+      )}
+
+      {stats && (
+        <section className="analytics-section" aria-labelledby="forward-section-heading">
+          <header className="analytics-section__header">
+            <h2 id="forward-section-heading" className="analytics-section__heading">
+              What&rsquo;s next?
+            </h2>
+            <p className="analytics-section__copy">
+              Select an activity and hour of day to see where students are most likely to go in the next 5 minutes &mdash; ranked from most to least probable. Averaged across all blocks within the selected hour.
+            </p>
+          </header>
+          <ForwardProbabilityChart data={data} stats={stats} />
+        </section>
+      )}
+
+      {stats && (
+        <section className="analytics-section" aria-labelledby="duration-section-heading">
+          <header className="analytics-section__header">
+            <h2 id="duration-section-heading" className="analytics-section__heading">
+              How long do students stay in each activity?
+            </h2>
+            <p className="analytics-section__copy">
+              Distribution of continuous session lengths for each activity across all simulated students. The box spans the middle 50% (IQR), the line spans the 5th&ndash;95th percentile, and the dot marks the mean.
+            </p>
+          </header>
+          <DurationStatsChart data={data} stats={stats} />
+        </section>
+      )}
     </div>
   );
 }

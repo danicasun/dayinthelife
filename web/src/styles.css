@@ -402,6 +402,148 @@ a:focus-visible {
   flex-shrink: 0;
 }
 
+/* --- New chart card classes (transition, forward-prob, duration-stats) ---- */
+.transition-chart,
+.forward-prob-chart,
+.duration-stats-chart {
+  background: var(--bg-elevated);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 14px 22px 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* --- Shared chart controls ------------------------------------------------- */
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  flex-wrap: wrap;
+}
+
+.chart-controls__label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-body);
+}
+
+.chart-controls__select {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-strong);
+  background: var(--bg-elevated);
+  border: 1px solid var(--ink-strong);
+  border-radius: 3px;
+  padding: 4px 8px;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.chart-controls__select:focus-visible {
+  outline: 2px solid var(--accent-cardinal);
+  outline-offset: 2px;
+}
+
+.chart-controls__swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.chart-controls__time-value {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-strong);
+  min-width: 80px;
+}
+
+.chart-controls__slider {
+  width: 240px;
+  cursor: pointer;
+  accent-color: var(--ink-strong);
+}
+
+.chart-controls__select--narrow {
+  min-width: 110px;
+}
+
+/* --- Next-activity ranked bar list ----------------------------------------- */
+.next-activity-ranking {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 4px 0;
+}
+
+.next-activity-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.next-activity-rank {
+  width: 20px;
+  text-align: right;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.next-activity-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.next-activity-label {
+  width: 200px;
+  flex-shrink: 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.next-activity-bar-track {
+  flex: 1;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.next-activity-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 180ms ease;
+  opacity: 0.8;
+}
+
+.next-activity-pct {
+  width: 46px;
+  text-align: right;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-body);
+  flex-shrink: 0;
+}
+
 /* --- Responsive niceties --------------------------------------------------- */
 @media (max-width: 1320px) {
   .app-shell {

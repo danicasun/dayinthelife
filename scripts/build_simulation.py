@@ -369,7 +369,7 @@ ATHLETICS_INDEX: int = 8
 #     unrealistic; real sessions are at least half an hour.
 #   athletics: at least 60 min (12 blocks) — practices are typically 1-2 hours.
 MIN_STAY_BLOCKS: Dict[int, int] = {
-    CLASS_INDEX:     6,   # 30 min
+    CLASS_INDEX:     4,   # 20 min
     EXERCISE_INDEX:  6,   # 30 min
     ATHLETICS_INDEX: 12,  # 60 min
 }

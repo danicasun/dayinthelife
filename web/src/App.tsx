@@ -203,8 +203,7 @@ export default function App(): JSX.Element {
             with at least 50% of their day recorded ({data.numChainRespondents} students) were
             used to fit the Markov model; all respondents with at least one entry were used for
             the activity-probability charts. Gaps within a day were forward-filled from the last
-            known activity, and the blank period around 5&ndash;6&nbsp;AM was assumed to be a
-            continuation of whatever preceded it (typically sleep).
+            known activity.
           </p>
           <p>
             <strong>Markov chain.</strong> From the survey, 288 time-varying 14&times;14

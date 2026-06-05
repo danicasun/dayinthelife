@@ -2,14 +2,16 @@ import { useMemo, useState } from 'react';
 import type { ActivityId, SimulationData } from '../lib/types';
 import { ACTIVITIES, findActivityIndex } from '../lib/categories';
 import type { SimulationStats } from '../lib/simulationStats';
+import { nextTransitionDistribution } from '../lib/simulationStats';
 
 /**
- * ForwardProbabilityChart — given a starting activity and hour of day,
- * shows the probability of transitioning to each other activity next,
- * ranked from most to least likely.
+ * ForwardProbabilityChart — given a starting activity and time of day,
+ * shows the probability distribution over the *next activity change*:
+ * "when this student eventually leaves, where do they go?"
  *
- * Probabilities are averaged across all 12 five-minute blocks within
- * the selected hour for a stable estimate.
+ * Uses nextTransitionDistribution: walks forward summing
+ * P(stay for k steps, then leave to X) over all k until survival ≈ 0,
+ * yielding a proper probability distribution over destinations that sums to ~1.
  */
 
 interface Props {
@@ -34,8 +36,7 @@ function makeHourOptions(startMinute: number): { label: string; hourIndex: numbe
 
 export default function ForwardProbabilityChart({ data, stats }: Props) {
   const [selectedActivityId, setSelectedActivityId] = useState<ActivityId>('eat');
-  // hourIndex 0 = 6 AM (data.startMinute anchor), default 3 = 9 AM
-  const [selectedHour, setSelectedHour] = useState<number>(3);
+  const [selectedHour, setSelectedHour] = useState<number>(3); // default 9 AM
 
   const selectedActivityIndex = useMemo(
     () => findActivityIndex(selectedActivityId),
@@ -44,42 +45,21 @@ export default function ForwardProbabilityChart({ data, stats }: Props) {
   const selectedActivity = ACTIVITIES[selectedActivityIndex];
   const hourOptions = useMemo(() => makeHourOptions(data.startMinute), [data.startMinute]);
 
-  // Average transition probabilities across the 12 blocks in the selected hour.
-  const { persistProb, exitRanked } = useMemo(() => {
-    const blocksPerHour = Math.round(60 / data.blockMinutes); // 12
-    const startBlock = selectedHour * blocksPerHour;
-    const numActivities = ACTIVITIES.length;
-    const avgProbs = new Array<number>(numActivities).fill(0);
-
-    for (let b = 0; b < blocksPerHour; b++) {
-      const t = (startBlock + b) % data.numBlocks;
-      const row = stats.transitionProbs[t]?.[selectedActivityIndex];
-      if (!row) continue;
-      for (let a = 0; a < numActivities; a++) {
-        avgProbs[a] += row[a] / blocksPerHour;
-      }
-    }
-
-    const selfProb = avgProbs[selectedActivityIndex];
-
-    // Exit distribution: probabilities for all other activities, normalized
-    // so they sum to 1 (i.e. conditional on actually leaving).
-    const exitMass = 1 - selfProb;
-    const exitRanked: RankedActivity[] = [];
-    for (let a = 0; a < numActivities; a++) {
-      if (a === selectedActivityIndex) continue;
-      exitRanked.push({
-        activityIndex: a,
-        prob: exitMass > 0 ? avgProbs[a] / exitMass : 0,
-      });
-    }
-    exitRanked.sort((a, b) => b.prob - a.prob);
-
-    return { persistProb: selfProb, exitRanked };
+  const exitRanked = useMemo<RankedActivity[]>(() => {
+    const startBlock = selectedHour * Math.round(60 / data.blockMinutes);
+    const exitProbs = nextTransitionDistribution(
+      stats.transitionProbs,
+      startBlock,
+      selectedActivityIndex,
+      data.numBlocks,
+    );
+    return exitProbs
+      .map((prob, activityIndex) => ({ activityIndex, prob }))
+      .filter(({ activityIndex }) => activityIndex !== selectedActivityIndex)
+      .sort((a, b) => b.prob - a.prob);
   }, [stats, selectedActivityIndex, selectedHour, data.blockMinutes, data.numBlocks]);
 
-  const exitMass = 1 - persistProb;
-  const maxExitProb = exitRanked[0]?.prob ?? 1;
+  const maxProb = exitRanked[0]?.prob ?? 1;
 
   return (
     <div className="forward-prob-chart">
@@ -105,7 +85,7 @@ export default function ForwardProbabilityChart({ data, stats }: Props) {
           style={{ backgroundColor: selectedActivity.color }}
         />
         <label className="chart-controls__label" htmlFor="next-hour-select">
-          At:
+          at:
         </label>
         <select
           id="next-hour-select"
@@ -121,23 +101,10 @@ export default function ForwardProbabilityChart({ data, stats }: Props) {
         </select>
       </div>
 
-      <div className="persistence-indicator" style={{ borderLeftColor: selectedActivity.color }}>
-        <span className="persistence-indicator__pct">
-          {(persistProb * 100).toFixed(1)}%
-        </span>
-        <span className="persistence-indicator__label">
-          still {selectedActivity.label.toLowerCase()} 5 min later
-        </span>
-      </div>
-
-      <div className="exit-distribution-header">
-        Of the {(exitMass * 100).toFixed(1)}% who leave, they go to:
-      </div>
-
       <div className="next-activity-ranking">
         {exitRanked.map(({ activityIndex, prob }, rank) => {
           const activity = ACTIVITIES[activityIndex];
-          const barPct = maxExitProb > 0 ? (prob / maxExitProb) * 100 : 0;
+          const barPct = (prob / maxProb) * 100;
           return (
             <div key={activityIndex} className="next-activity-row">
               <span className="next-activity-rank">{rank + 1}</span>

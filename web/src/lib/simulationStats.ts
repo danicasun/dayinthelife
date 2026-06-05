@@ -197,6 +197,49 @@ export function computeSimulationStats(data: SimulationData): SimulationStats {
 }
 
 // ---------------------------------------------------------------------------
+// Next-transition distribution
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute the probability that the *next activity change* from `startActivity`
+ * (beginning at `startBlock`) lands on each other activity.
+ *
+ * Algorithm: walk forward step-by-step carrying a "survival" probability —
+ * the probability of still being in `startActivity`. At each step k, the
+ * contribution to destination X is `survival × T[t][from][X]`, then survival
+ * is multiplied by the self-transition rate `T[t][from][from]`. This sums
+ * the geometric series P(leave to X after exactly k steps) over all k until
+ * survival falls below the tolerance.
+ *
+ * The returned vector sums to ≈ 1 (the tiny remainder is probability of never
+ * leaving within MAX_STEPS, negligible for all realistic self-transition rates).
+ */
+export function nextTransitionDistribution(
+  transitionProbs: number[][][],
+  startBlock: number,
+  startActivity: number,
+  numBlocks: number,
+  maxSteps: number = 288,
+): number[] {
+  const exitProbs = new Array<number>(NUM_ACTIVITIES).fill(0);
+  let survival = 1.0;
+
+  for (let k = 0; k < maxSteps; k++) {
+    if (survival < 1e-5) break;
+    const t = (startBlock + k) % numBlocks;
+    const row = transitionProbs[t]?.[startActivity];
+    if (!row) break;
+    for (let to = 0; to < NUM_ACTIVITIES; to++) {
+      if (to === startActivity) continue;
+      exitProbs[to] += survival * row[to];
+    }
+    survival *= row[startActivity];
+  }
+
+  return exitProbs;
+}
+
+// ---------------------------------------------------------------------------
 // Forward probability propagation
 // ---------------------------------------------------------------------------
 

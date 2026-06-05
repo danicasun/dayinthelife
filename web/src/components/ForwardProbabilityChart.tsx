@@ -44,9 +44,8 @@ export default function ForwardProbabilityChart({ data, stats }: Props) {
   const selectedActivity = ACTIVITIES[selectedActivityIndex];
   const hourOptions = useMemo(() => makeHourOptions(data.startMinute), [data.startMinute]);
 
-  // Average transition probabilities across the 12 blocks in the selected hour,
-  // then sort descending to produce a ranked list.
-  const rankedTransitions = useMemo<RankedActivity[]>(() => {
+  // Average transition probabilities across the 12 blocks in the selected hour.
+  const { persistProb, exitRanked } = useMemo(() => {
     const blocksPerHour = Math.round(60 / data.blockMinutes); // 12
     const startBlock = selectedHour * blocksPerHour;
     const numActivities = ACTIVITIES.length;
@@ -61,12 +60,26 @@ export default function ForwardProbabilityChart({ data, stats }: Props) {
       }
     }
 
-    return avgProbs
-      .map((prob, activityIndex) => ({ activityIndex, prob }))
-      .sort((a, b) => b.prob - a.prob);
+    const selfProb = avgProbs[selectedActivityIndex];
+
+    // Exit distribution: probabilities for all other activities, normalized
+    // so they sum to 1 (i.e. conditional on actually leaving).
+    const exitMass = 1 - selfProb;
+    const exitRanked: RankedActivity[] = [];
+    for (let a = 0; a < numActivities; a++) {
+      if (a === selectedActivityIndex) continue;
+      exitRanked.push({
+        activityIndex: a,
+        prob: exitMass > 0 ? avgProbs[a] / exitMass : 0,
+      });
+    }
+    exitRanked.sort((a, b) => b.prob - a.prob);
+
+    return { persistProb: selfProb, exitRanked };
   }, [stats, selectedActivityIndex, selectedHour, data.blockMinutes, data.numBlocks]);
 
-  const maxProb = rankedTransitions[0]?.prob ?? 1;
+  const exitMass = 1 - persistProb;
+  const maxExitProb = exitRanked[0]?.prob ?? 1;
 
   return (
     <div className="forward-prob-chart">
@@ -108,10 +121,23 @@ export default function ForwardProbabilityChart({ data, stats }: Props) {
         </select>
       </div>
 
+      <div className="persistence-indicator" style={{ borderLeftColor: selectedActivity.color }}>
+        <span className="persistence-indicator__pct">
+          {(persistProb * 100).toFixed(1)}%
+        </span>
+        <span className="persistence-indicator__label">
+          still {selectedActivity.label.toLowerCase()} 5 min later
+        </span>
+      </div>
+
+      <div className="exit-distribution-header">
+        Of the {(exitMass * 100).toFixed(1)}% who leave, they go to:
+      </div>
+
       <div className="next-activity-ranking">
-        {rankedTransitions.map(({ activityIndex, prob }, rank) => {
+        {exitRanked.map(({ activityIndex, prob }, rank) => {
           const activity = ACTIVITIES[activityIndex];
-          const barPct = maxProb > 0 ? (prob / maxProb) * 100 : 0;
+          const barPct = maxExitProb > 0 ? (prob / maxExitProb) * 100 : 0;
           return (
             <div key={activityIndex} className="next-activity-row">
               <span className="next-activity-rank">{rank + 1}</span>

@@ -131,27 +131,45 @@ export function computeSimulationStats(data: SimulationData): SimulationStats {
   }
 
   // ---- 2. Run lengths ------------------------------------------------------
-  // runLengths[activityIndex] = array of consecutive-run lengths in minutes
+  // runLengths[activityIndex] = array of consecutive-run lengths in minutes.
+  //
+  // The simulation day is anchored at 06:00, so a sleep session that started
+  // at 11 PM and ends at 7 AM is split across the day boundary: blocks ~200-287
+  // form the tail of the session and blocks 0-N form the head. We detect this
+  // by checking whether the first and last blocks of a trajectory share the
+  // same activity, and if so we merge the terminal run with the initial run
+  // before recording lengths — giving the true continuous session duration.
   const runLengths: number[][] = Array.from({ length: NUM_ACTIVITIES }, () => []);
 
   for (let s = 0; s < numStudents; s++) {
     const traj = students[s];
+
+    // Collect all runs as (activity, blockCount) pairs.
+    const runs: Array<{ activity: number; blocks: number }> = [];
     let runStart = 0;
     let currentActivity = traj[0];
-
     for (let t = 1; t < T; t++) {
-      const activity = traj[t];
-      if (activity !== currentActivity) {
-        // Flush completed run
-        const runLen = (t - runStart) * blockMinutes;
-        runLengths[currentActivity].push(runLen);
+      if (traj[t] !== currentActivity) {
+        runs.push({ activity: currentActivity, blocks: t - runStart });
         runStart = t;
-        currentActivity = activity;
+        currentActivity = traj[t];
       }
     }
-    // Flush final run at end of trajectory
-    const runLen = (T - runStart) * blockMinutes;
-    runLengths[currentActivity].push(runLen);
+    runs.push({ activity: currentActivity, blocks: T - runStart });
+
+    // Merge the terminal run into the initial run when they share the same
+    // activity — the session straddles the 06:00 day boundary.
+    if (runs.length >= 2 && runs[0].activity === runs[runs.length - 1].activity) {
+      runs[0] = {
+        activity: runs[0].activity,
+        blocks: runs[0].blocks + runs[runs.length - 1].blocks,
+      };
+      runs.pop();
+    }
+
+    for (const { activity, blocks } of runs) {
+      runLengths[activity].push(blocks * blockMinutes);
+    }
   }
 
   // Sort and compute quantiles

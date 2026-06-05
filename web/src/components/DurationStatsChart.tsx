@@ -21,8 +21,8 @@ const CHART_WIDTH = 1000;
 const ROW_HEIGHT = 28;
 const CHART_MARGIN = { top: 16, right: 60, bottom: 50, left: 148 } as const;
 
-/** Cap x-axis at 480 minutes (8 hours) for readability. */
-const X_MAX_MINUTES = 480;
+/** Cap x-axis at 420 minutes (7 hours) for readability. */
+const X_MAX_MINUTES = 420;
 
 interface DurationStatsChartProps {
   data: SimulationData;
@@ -57,7 +57,7 @@ export default function DurationStatsChart({ data, stats }: DurationStatsChartPr
       .attr('transform', `translate(${CHART_MARGIN.left}, ${CHART_MARGIN.top})`);
 
     // ---- Subtle vertical grid at 60-min intervals --------------------------
-    const xTickValues = [0, 60, 120, 180, 240, 300, 360, 420, 480];
+    const xTickValues = [0, 60, 120, 180, 240, 300, 360, 420];
     root
       .append('g')
       .attr('class', 'duration-chart-grid')

@@ -4,8 +4,8 @@
  * Exports:
  *   - `ActivityRunStats`     — box-plot quantiles + mean for continuous run lengths
  *   - `SimulationStats`      — transition probability tensor + run stats array
- *   - `computeSimulationStats` — O(numStudents × numBlocks) computation
- *   - `forwardProbabilities`   — matrix-vector propagation over the transition tensor
+ *   - `computeSimulationStats`       — O(numStudents × numBlocks) computation
+ *   - `nextTransitionDistribution`   — probability distribution over next activity change
  */
 
 import type { SimulationData } from './types';
@@ -239,54 +239,3 @@ export function nextTransitionDistribution(
   return exitProbs;
 }
 
-// ---------------------------------------------------------------------------
-// Forward probability propagation
-// ---------------------------------------------------------------------------
-
-/**
- * Compute `prob[k][activity]` = probability of being in `activity` after `k`
- * steps, starting deterministically in `startActivity` at block `startBlock`.
- *
- * @param transitionProbs  Output of `computeSimulationStats`, shape [T-1][A][A].
- * @param startBlock       Block index of the starting state (0-based).
- * @param startActivity    Activity index of the starting state (0..13).
- * @param nSteps           How many 5-minute steps to simulate forward.
- * @param numBlocks        Total blocks per day (used for modular wrap-around).
- * @returns                Array of length `nSteps + 1`; index 0 = starting state.
- */
-export function forwardProbabilities(
-  transitionProbs: number[][][],
-  startBlock: number,
-  startActivity: number,
-  nSteps: number,
-  numBlocks: number,
-): number[][] {
-  const T = transitionProbs.length; // = numBlocks - 1 typically
-  const prob: number[][] = [];
-
-  // k = 0: deterministic starting distribution
-  const p0 = new Array<number>(NUM_ACTIVITIES).fill(0);
-  p0[startActivity] = 1.0;
-  prob.push(p0);
-
-  for (let k = 0; k < nSteps; k++) {
-    const t = (startBlock + k) % numBlocks;
-    // Use modular index into transitionProbs (which has length T = numBlocks-1)
-    const tIdx = t % T;
-    const transRow = transitionProbs[tIdx];
-    const pPrev = prob[k];
-    const pNext = new Array<number>(NUM_ACTIVITIES).fill(0);
-
-    for (let from = 0; from < NUM_ACTIVITIES; from++) {
-      const pFrom = pPrev[from];
-      if (pFrom === 0) continue;
-      const row = transRow[from];
-      for (let to = 0; to < NUM_ACTIVITIES; to++) {
-        pNext[to] += pFrom * row[to];
-      }
-    }
-    prob.push(pNext);
-  }
-
-  return prob;
-}

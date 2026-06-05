@@ -21,9 +21,6 @@ const CHART_WIDTH = 1000;
 const ROW_HEIGHT = 28;
 const CHART_MARGIN = { top: 16, right: 60, bottom: 50, left: 148 } as const;
 
-/** Cap x-axis at 420 minutes (7 hours) for readability. */
-const X_MAX_MINUTES = 420;
-
 interface DurationStatsChartProps {
   data: SimulationData;
   stats: SimulationStats;
@@ -42,8 +39,10 @@ export default function DurationStatsChart({ data, stats }: DurationStatsChartPr
     const innerWidth = CHART_WIDTH - CHART_MARGIN.left - CHART_MARGIN.right;
     const innerHeight = numActivities * ROW_HEIGHT;
 
-    // x-axis: minutes, 0 to X_MAX_MINUTES
-    const xScale = d3.scaleLinear().domain([0, X_MAX_MINUTES]).range([0, innerWidth]);
+    // x-axis: derive max from actual data so no activity is clipped
+    const rawMax = Math.max(...stats.runStats.map((r) => r.p95), 60);
+    const xMax = Math.ceil(rawMax / 60) * 60; // round up to next whole hour
+    const xScale = d3.scaleLinear().domain([0, xMax]).range([0, innerWidth]);
 
     // y-axis: one row per activity, center-of-row
     // row i is centered at (i + 0.5) * ROW_HEIGHT
@@ -57,7 +56,7 @@ export default function DurationStatsChart({ data, stats }: DurationStatsChartPr
       .attr('transform', `translate(${CHART_MARGIN.left}, ${CHART_MARGIN.top})`);
 
     // ---- Subtle vertical grid at 60-min intervals --------------------------
-    const xTickValues = [0, 60, 120, 180, 240, 300, 360, 420];
+    const xTickValues = Array.from({ length: Math.floor(xMax / 60) + 1 }, (_, i) => i * 60);
     root
       .append('g')
       .attr('class', 'duration-chart-grid')
@@ -78,12 +77,12 @@ export default function DurationStatsChart({ data, stats }: DurationStatsChartPr
       const cy = yCenter(rs.activityIndex);
       const color = activity.color;
 
-      const p5x = xScale(Math.min(rs.p5, X_MAX_MINUTES));
-      const p25x = xScale(Math.min(rs.p25, X_MAX_MINUTES));
-      const medianX = xScale(Math.min(rs.median, X_MAX_MINUTES));
-      const p75x = xScale(Math.min(rs.p75, X_MAX_MINUTES));
-      const p95x = xScale(Math.min(rs.p95, X_MAX_MINUTES));
-      const meanX = xScale(Math.min(rs.mean, X_MAX_MINUTES));
+      const p5x = xScale(rs.p5);
+      const p25x = xScale(rs.p25);
+      const medianX = xScale(rs.median);
+      const p75x = xScale(rs.p75);
+      const p95x = xScale(rs.p95);
+      const meanX = xScale(rs.mean);
 
       const rowG = root.append('g').attr('class', `duration-row duration-row--${activity.id}`);
 

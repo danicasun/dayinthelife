@@ -37,7 +37,7 @@ export default function TransitionChart({ data, stats }: TransitionChartProps) {
   // and identify the top-5 destinations by max probability across all blocks.
   const { seriesData, top5Indices } = useMemo(() => {
     const { transitionProbs } = stats;
-    const numBlocks = transitionProbs.length; // T - 1
+    const numBlocks = transitionProbs.length;
     const numActivities = ACTIVITIES.length;
     const fromIdx = selectedActivityIndex;
     const blockMinutes = data.blockMinutes;

@@ -52,7 +52,6 @@ import ForwardProbabilityChart from './components/ForwardProbabilityChart';
  */
 const SIMULATION_JSON_URL = `${import.meta.env.BASE_URL}simulation.json`;
 
-
 /** Minutes in a 24-hour day; `currentMinute` wraps modulo this value. */
 const MINUTES_PER_DAY = 1440;
 
@@ -278,7 +277,7 @@ export default function App(): JSX.Element {
               What&rsquo;s next?
             </h2>
             <p className="analytics-section__copy">
-              Select an activity and hour of day to see where students are most likely to go in the next 5 minutes &mdash; ranked from most to least probable. Averaged across all blocks within the selected hour.
+              Select an activity and hour of day to see where students are most likely to transition to next &mdash; not just the following 5 minutes, but the next time their activity actually changes. Ranked by probability of that destination being the first new activity they move into.
             </p>
           </header>
           <ForwardProbabilityChart data={data} stats={stats} />

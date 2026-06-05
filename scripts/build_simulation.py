@@ -362,16 +362,15 @@ def build_initial_distribution(
 
 # Activity catalog indices (must match ACTIVITY_CATALOG order above).
 CLASS_INDEX:     int = 1
+SOCIAL_INDEX:    int = 5
 EXERCISE_INDEX:  int = 7
 ATHLETICS_INDEX: int = 8
 
 # Minimum number of consecutive blocks a dot must stay in these activities
 # before the chain is allowed to transition it out.  One block = 5 min.
-#   class / exercise: at least 30 min (6 blocks) — dropping out after 5 min is
-#     unrealistic; real sessions are at least half an hour.
-#   athletics: at least 60 min (12 blocks) — practices are typically 1-2 hours.
 MIN_STAY_BLOCKS: Dict[int, int] = {
     CLASS_INDEX:     4,   # 20 min
+    SOCIAL_INDEX:    2,   # 10 min
     EXERCISE_INDEX:  6,   # 30 min
     ATHLETICS_INDEX: 12,  # 60 min
 }

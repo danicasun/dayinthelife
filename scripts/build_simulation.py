@@ -355,6 +355,27 @@ def build_initial_distribution(
 
 
 # ---------------------------------------------------------------------------
+# Simulation constraints
+# ---------------------------------------------------------------------------
+
+# Activity catalog indices (must match ACTIVITY_CATALOG order above).
+CLASS_INDEX:     int = 1
+EXERCISE_INDEX:  int = 7
+ATHLETICS_INDEX: int = 8
+
+# Minimum number of consecutive blocks a dot must stay in these activities
+# before the chain is allowed to transition it out.  One block = 5 min.
+#   class / exercise: at least 30 min (6 blocks) — dropping out after 5 min is
+#     unrealistic; real sessions are at least half an hour.
+#   athletics: at least 60 min (12 blocks) — practices are typically 1-2 hours.
+MIN_STAY_BLOCKS: Dict[int, int] = {
+    CLASS_INDEX:     6,   # 30 min
+    EXERCISE_INDEX:  6,   # 30 min
+    ATHLETICS_INDEX: 12,  # 60 min
+}
+
+
+# ---------------------------------------------------------------------------
 # Simulation
 # ---------------------------------------------------------------------------
 
@@ -366,19 +387,37 @@ def simulate_students(
 ) -> List[List[int]]:
     """Sample `num_students` trajectories of length NUM_BLOCKS.
 
-    Uses `rng.choices` with explicit weights (no cumulative-weight
-    precomputation needed; the categorical distributions are tiny).
+    Applies a minimum-stay constraint: once a dot enters class, exercise, or
+    athletics it must remain for at least MIN_STAY_BLOCKS[activity] blocks.
+    While the minimum is unsatisfied the row of T[t] is replaced with a
+    stay-in-place distribution (self-transition prob = 1).
     """
     activity_indices = list(range(NUM_ACTIVITIES))
     students: List[List[int]] = []
     for _ in range(num_students):
         trajectory: List[int] = [0] * NUM_BLOCKS
         trajectory[0] = rng.choices(activity_indices, weights=pi_0, k=1)[0]
+        blocks_in_current: int = 1  # consecutive blocks spent in trajectory[0]
+
         for t in range(NUM_BLOCKS - 1):
             current = trajectory[t]
-            trajectory[t + 1] = rng.choices(
-                activity_indices, weights=transitions[t][current], k=1
-            )[0]
+            weights: List[float] = list(transitions[t][current])
+
+            # --- Constraint 1: minimum stay ---
+            min_stay = MIN_STAY_BLOCKS.get(current, 0)
+            if blocks_in_current < min_stay:
+                # Force self-transition; ignore all other chain weights.
+                weights = [0.0] * NUM_ACTIVITIES
+                weights[current] = 1.0
+
+            next_activity = rng.choices(activity_indices, weights=weights, k=1)[0]
+            trajectory[t + 1] = next_activity
+
+            if next_activity == current:
+                blocks_in_current += 1
+            else:
+                blocks_in_current = 1
+
         students.append(trajectory)
     return students
 
